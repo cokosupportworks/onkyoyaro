@@ -83,7 +83,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 18px;
-      padding: 18px 22px;
+      padding: 8px 22px;
       border-bottom: 1px solid rgba(255, 255, 255, .08);
       background: rgba(16, 17, 20, .82);
       backdrop-filter: blur(18px);
@@ -95,34 +95,22 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 14px;
-      min-width: 230px;
-    }
-
-    .mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: 2px solid rgba(248, 201, 77, .8);
-      background:
-        radial-gradient(circle at center, #101114 0 25%, transparent 26%),
-        conic-gradient(from 40deg, var(--accent), #ff5b6c, var(--accent-2), var(--accent));
-      box-shadow: 0 0 24px rgba(248, 201, 77, .25);
-    }
-
-    h1 {
-      font-size: 19px;
-      line-height: 1.1;
+      gap: 12px;
+      padding: 0;
       margin: 0;
-      letter-spacing: 0;
     }
 
-    .brand small {
+    .logo {
+      height: 46px;
+      width: auto;
+      object-fit: contain;
       display: block;
-      color: var(--muted);
-      margin-top: 3px;
-      font-size: 12px;
+      margin: 0;
     }
+
+
+
+
 
     .toolbar {
       display: flex;

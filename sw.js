@@ -1,11 +1,13 @@
-const CACHE_NAME = 'onkyoyaro-v26';
+const CACHE_NAME = 'onkyoyaro-v27';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './jszip.min.js',
-  './manifest.json'
+  './manifest.json',
+  './onkyologo.png',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {

@@ -1,6 +1,6 @@
 {
-  "name": "SoundDeck Offline",
-  "short_name": "SoundDeck",
+  "name": "音響野郎",
+  "short_name": "音響野郎",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#101114",

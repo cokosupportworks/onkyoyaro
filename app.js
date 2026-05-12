@@ -2,10 +2,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
 }
 
-const DB_NAME = "sounddeck-offline";
+const DB_NAME = "onkyo-yaro";
     const DB_VERSION = 2;
     const STORE = "audio";
-    const STATE_KEY = "sounddeck-state-v1";
+    const STATE_KEY = "onkyo-state-v1";
     const AUDIO_EXTENSIONS = /\.(mp3|wav|ogg|m4a|aac|flac|webm)$/i;
 
     const els = {
@@ -1012,14 +1012,14 @@ const DB_NAME = "sounddeck-offline";
 
     function exportListOnly() {
       const data = {
-        app: "SoundDeck Offline",
+        app: "音響野郎",
         version: 1,
         type: "list",
         exportedAt: new Date().toISOString(),
         settings: exportSettings(),
         tracks: tracks.map(({ dataUrl, ...track }) => track)
       };
-      downloadJson(data, `sounddeck-list-${dateStamp()}.json`);
+      downloadJson(data, `onkyo-list-${dateStamp()}.json`);
       status("リストのみを書き出しました");
     }
 
@@ -1039,7 +1039,7 @@ const DB_NAME = "sounddeck-offline";
       }
       
       const metadata = {
-        app: "SoundDeck Offline",
+        app: "音響野郎",
         version: 2,
         type: "package-zip",
         exportedAt: new Date().toISOString(),
@@ -1049,7 +1049,7 @@ const DB_NAME = "sounddeck-offline";
       
       zip.file("metadata.json", JSON.stringify(metadata, null, 2));
       const zipBlob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(zipBlob, `sounddeck-package-${dateStamp()}.zip`);
+      downloadBlob(zipBlob, `onkyo-package-${dateStamp()}.zip`);
       status("音声込みパッケージ(.zip)を書き出しました");
     }
 

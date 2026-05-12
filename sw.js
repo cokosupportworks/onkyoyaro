@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sounddeck-offline-v24';
+const CACHE_NAME = 'onkyoyaro-v26';
 const ASSETS = [
   './',
   './index.html',

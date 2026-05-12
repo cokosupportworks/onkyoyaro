@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SoundDeck Offline</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <h1>SoundDeck Offline</h1>
+          <small>現場用ポン出し & BGMプレイヤー</small>
+        </div>
+      </div>
+      <div class="toolbar">
+        <label class="file-button">
+          <button type="button" id="pickFiles">音声を追加</button>
+          <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" multiple>
+        </label>
+        <label class="file-button">
+          <button type="button" id="pickFolder">フォルダ読込</button>
+          <input id="folderInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" webkitdirectory multiple>
+        </label>
+        <button id="exportList">リスト保存</button>
+        <button id="exportPackage">音声込み保存</button>
+        <label class="file-button">
+          <button type="button" id="importButton">リスト読込</button>
+          <input id="importInput" type="file" accept=".json,.zip,.sdpkg,application/json,application/zip">
+        </label>
+        <button id="safetyLock">本番ロック: OFF</button>
+        <button id="clearAll" class="danger">全消去</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="deck" aria-label="再生デッキ">
+        <div class="now">
+          <div class="label">Now Playing</div>
+          <div id="nowTitle" class="track-title">音声を選択してください</div>
+          <div class="meters">
+            <div class="bar"><div id="progress" class="fill"></div></div>
+            <div class="time-row">
+              <span id="currentTime">00:00.0</span>
+              <span id="duration">00:00.0</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <button id="playPause" class="play">再生</button>
+            <button id="stopInstant" class="stop-now">即座に停止</button>
+            <button id="stopOne" class="stop-soft">1秒フェード停止</button>
+            <button id="nextQueue">次を再生</button>
+          </div>
+        </div>
+
+        <div class="fader">
+          <div class="label">Fade / Transition</div>
+          <div class="fade-row">
+            <input id="fadeSlider" type="range" min="0.2" max="15" step="0.1" value="3">
+            <input id="fadeSeconds" type="number" min="0.2" max="60" step="0.1" value="3.0">
+            <button id="stopCustom" class="stop-soft">任意フェード停止</button>
+          </div>
+          <div class="mini-grid">
+            <label>切替モード
+              <select id="transitionMode">
+                <option value="instant">即切替</option>
+                <option value="crossfade">クロスフェード</option>
+                <option value="fadeThenPlay">フェード後に次を再生</option>
+              </select>
+            </label>
+            <label>クロスフェード秒数
+              <input id="crossfadeSeconds" type="number" min="0" max="30" step="0.1" value="2.0">
+            </label>
+          </div>
+        </div>
+
+        <div class="queue">
+          <div class="label">Cue Queue</div>
+          <div class="control-row">
+            <select id="queueMode">
+              <option value="manual">手動スタンバイ</option>
+              <option value="auto">曲終わりで自動再生</option>
+              <option value="fade">曲終わりでフェード接続</option>
+            </select>
+            <button id="clearQueue" class="edit-control">キュー消去</button>
+          </div>
+          <div id="queueList" class="queue-list"></div>
+        </div>
+
+        <div class="fader">
+          <div class="label">MIDI Device</div>
+          <div class="control-row">
+            <button id="enableMidi">MIDI有効化</button>
+          </div>
+          <div id="midiStatus" class="status">MIDI未接続</div>
+        </div>
+
+        <div id="dropZone" class="drop-zone">
+          音声ファイルをここへドラッグ&ドロップ
+        </div>
+
+        <div class="stat-row">
+          <span id="trackCount" class="status">0 tracks</span>
+          <span id="saveStatus" class="status">自動保存待機中</span>
+          <span id="storageStatus" class="status"></span>
+        </div>
+      </section>
+
+      <section class="library" aria-label="音声リスト">
+        <div class="tabs">
+          <button id="listTab" class="tab active">リスト</button>
+          <button id="padTab" class="tab">ポン出し</button>
+          <button id="editTab" class="tab">詳細編集</button>
+        </div>
+        <div class="library-head">
+          <input id="search" class="search" type="search" placeholder="ファイル名 / タグ / ホットキーで検索">
+          <span id="importStatus" class="status"></span>
+        </div>
+        <div class="view-container">
+          <div id="trackList" class="track-list view active"></div>
+          <div id="padGrid" class="pad-grid view"></div>
+          <div id="inspector" class="inspector view"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="jszip.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

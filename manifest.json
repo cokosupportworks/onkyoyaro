@@ -1,0 +1,16 @@
+{
+  "name": "SoundDeck Offline",
+  "short_name": "SoundDeck",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#101114",
+  "description": "現場用ポン出し & BGMプレイヤー (オフライン対応)",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzEwMTExNCIgc3Ryb2tlPSIjZjhjOTRkIiBzdHJva2Utd2lkdGg9IjQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIyNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjBkNmM3IiBzdHJva2Utd2lkdGg9IjgiLz48L3N2Zz4=",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

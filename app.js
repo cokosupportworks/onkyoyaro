@@ -63,8 +63,7 @@ const DB_NAME = "onkyo-yaro";
     let audioBufferCache = new Map();
     let audioNodes = {
       active: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 },
-      standby: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 },
-      preview: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 }
+      standby: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 }
     };
     let updateAnimationId = null;
     let draggedId = null;
@@ -533,7 +532,6 @@ const DB_NAME = "onkyo-yaro";
               <input type="checkbox" class="list-loop-toggle" ${track.loop ? "checked" : ""}>
               <span class="slider"></span>
             </label>
-            <button type="button" title="確認用出力で試聴" data-action="preview">P</button>
             <button type="button" title="キューへ追加" data-action="queue">Q</button>
             <button type="button" title="詳細編集" data-action="edit">⚙</button>
             <button type="button" title="上へ" class="edit-control" data-action="up" ${index === 0 || locked ? "disabled" : ""}>↑</button>
@@ -590,7 +588,6 @@ const DB_NAME = "onkyo-yaro";
       const action = btn.dataset.action;
       
       if (action === "play") await playTrack(id);
-      else if (action === "preview") await previewTrack(id);
       else if (action === "queue") await addToQueue(id);
       else if (action === "edit") {
         selectedId = id;
@@ -731,26 +728,7 @@ const DB_NAME = "onkyo-yaro";
       });
     }
 
-    async function previewTrack(id) {
-      const track = tracks.find(item => item.id === id);
-      const blob = await dbGet(STORE, id);
-      if (!track || !blob) return status("試聴できる音声がありません");
-      
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === "suspended") await audioContext.resume();
-      
-      stopDeck(audioNodes.preview);
-      const buffer = await getAudioBuffer(id, blob);
-      const targetVolume = Math.min(0.85, track.volume);
-      const deckObj = createDeck(track, buffer, targetVolume);
-      
-      audioNodes.preview.source = deckObj.source;
-      audioNodes.preview.gain = deckObj.gain;
-      audioNodes.preview.panner = deckObj.panner;
-      audioNodes.preview.paused = false;
-      
-      audioNodes.preview.source.start(0, track.start || 0);
-    }
+
 
     function renderInspector() {
       const track = tracks.find(item => item.id === selectedId) || tracks[0];

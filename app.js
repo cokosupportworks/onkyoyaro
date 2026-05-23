@@ -87,7 +87,7 @@ if ('serviceWorker' in navigator) {
         }
       };
       DragDropTouch.prototype._shouldHandle = function (e) {
-        return e && !e.defaultPrevented && e.touches && e.touches.length > 0;
+        return e && !e.defaultPrevented && e.touches && e.touches.length < 2;
       };
       DragDropTouch.prototype._reset = function () {
         this._destroyImage();

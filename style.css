@@ -16,6 +16,9 @@
 
     * {
       box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     body {
@@ -32,8 +35,16 @@
     button,
     input,
     select,
-    textarea {
+    textarea,
+    [contenteditable="true"] {
       font: inherit;
+    }
+    
+    input,
+    textarea,
+    [contenteditable="true"] {
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
 
     button {

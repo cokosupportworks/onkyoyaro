@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onkyoyaro-v35';
+const CACHE_NAME = 'onkyoyaro-v36';
 const ASSETS = [
   './',
   './index.html',

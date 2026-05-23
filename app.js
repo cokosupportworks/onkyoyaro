@@ -35,8 +35,11 @@ if ('serviceWorker' in navigator) {
             this._dragSource = src;
             this._ptDown = e.touches[0];
             this._lastTouch = e.touches[0];
-            if (e.target.classList.contains('drag-handle')) {
+            // ドラッグハンドル、またはその子要素がタッチされた場合
+            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
+              // ブラウザのスクロールやテキスト選択・メニュー表示などの不要なデフォルト処理を完全に抑止
               e.preventDefault();
+              e.stopPropagation();
             }
           }
         }

@@ -675,18 +675,28 @@
     }
 
     /* Drag and Drop Custom Styles */
+    .track {
+      -webkit-user-select: none; /* iOS Safari */
+      user-select: none;         /* 標準 */
+      -webkit-touch-callout: none; /* 長押しメニュー防止 */
+      touch-action: pan-y;       /* Y軸スクロールのみ（ドラッグ中はJSで防止） */
+    }
+
     .drag-handle {
       color: var(--muted);
       cursor: grab;
-      font-size: 16px;
+      font-size: 18px;
+      -webkit-user-select: none;
       user-select: none;
-      padding: 4px;
+      padding: 8px 12px; /* タッチエリアを物理的に広く */
       display: flex;
       align-items: center;
       justify-content: center;
+      touch-action: none; /* ハンドル上ではブラウザのスクロール動作を100%禁止 */
     }
     .drag-handle:active {
       cursor: grabbing;
+      color: var(--accent); /* 掴んだときに黄色く光らせる */
     }
     
     .track[draggable="true"] {

@@ -578,7 +578,8 @@
     .empty {
       grid-column: 1 / -1;
       color: var(--muted);
-      padding: 28px;
+      padding: 28px 4px; /* 左右のパディングを減らして1行に収める */
+      font-size: 13px; /* 少し小さくして1行に収めやすくする */
       border: 1px dashed var(--line);
       border-radius: 8px;
       text-align: center;
@@ -746,4 +747,275 @@
       background: rgba(32, 214, 199, 0.05);
       border-radius: 4px;
       padding: 4px;
+    }
+
+    /* Pan Slider Custom Styles */
+    .pan-label-container {
+      display: flex !important;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .pan-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .pan-value-display {
+      font-family: monospace;
+      font-weight: bold;
+      color: var(--accent);
+      background: rgba(248, 201, 77, 0.1);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .pan-slider-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pan-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #313642;
+      outline: none;
+      margin: 10px 0 16px 0;
+      position: relative;
+    }
+
+    .pan-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--text);
+      border: 2px solid var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 4px var(--shadow);
+      transition: transform 0.1s ease, background-color 0.1s ease;
+    }
+
+    .pan-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: var(--accent);
+    }
+
+    .pan-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--text);
+      border: 2px solid var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 4px var(--shadow);
+      transition: transform 0.1s ease, background-color 0.1s ease;
+    }
+
+    .pan-slider::-moz-range-thumb:hover {
+      transform: scale(1.2);
+      background: var(--accent);
+    }
+
+    .pan-ticks {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+      pointer-events: none;
+      padding: 0 2px;
+    }
+
+    .pan-ticks span {
+      position: relative;
+      line-height: 1;
+    }
+    
+    .pan-tick-c {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .pan-tick-c:hover {
+      color: var(--accent);
+    }
+
+    .pan-tick-c::before {
+      content: "";
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 8px;
+      background: var(--line);
+      z-index: 1;
+    }
+    .pan-tick-l::before {
+      content: "";
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      width: 1px;
+      height: 4px;
+      background: var(--line);
+    }
+    .pan-tick-r::before {
+      content: "";
+      position: absolute;
+      bottom: 12px;
+      right: 0;
+      width: 1px;
+      height: 4px;
+      background: var(--line);
+    }
+
+    /* Dropdown Menu Styles */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: var(--panel);
+      min-width: 220px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+      z-index: 1000;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+    }
+    
+    .dropdown:hover .dropdown-content, .dropdown:focus-within .dropdown-content {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .dropdown-content button, .dropdown-content .file-button {
+      background: none;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-radius: 0;
+      padding: 12px 16px;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      color: var(--text);
+    }
+    
+    .dropdown-content button:last-child, .dropdown-content .file-button:last-child {
+      border-bottom: none;
+    }
+    
+    .dropdown-content button:hover, .dropdown-content .file-button:hover {
+      background-color: var(--panel-2);
+      color: var(--accent);
+    }
+
+    /* Help Modal Styles */
+    .help-modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .help-modal.active {
+      display: flex;
+    }
+
+    .help-modal-content {
+      background-color: var(--panel);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      width: 80%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: popIn 0.2s ease-out;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .help-modal-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(248, 201, 77, 0.1);
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    
+    .help-modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .close-help {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .close-help:hover {
+      color: var(--danger);
+      background: none;
+      border-color: transparent;
+      transform: none;
+    }
+
+    .help-modal-body {
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    
+    /* Help Mode Active State */
+    body.help-mode-active * {
+      cursor: help !important;
+    }
+    
+    body.help-mode-active .help-modal * {
+      cursor: auto !important;
+    }
+    
+    #helpToggle.active {
+      background-color: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: bold;
     }

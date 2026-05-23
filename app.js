@@ -214,7 +214,13 @@ const DB_NAME = "onkyo-yaro";
       learnStopInstant: document.getElementById("learnStopInstant"),
       learnStopSoft: document.getElementById("learnStopSoft"),
       learnStopCustom: document.getElementById("learnStopCustom"),
-      systemHotkeysStatus: document.getElementById("systemHotkeysStatus")
+      systemHotkeysStatus: document.getElementById("systemHotkeysStatus"),
+      resetSystemHotkeys: document.getElementById("resetSystemHotkeys"),
+      helpToggle: document.getElementById("helpToggle"),
+      helpModal: document.getElementById("helpModal"),
+      closeHelpModal: document.getElementById("closeHelpModal"),
+      helpTitle: document.getElementById("helpTitle"),
+      helpDescription: document.getElementById("helpDescription")
     };
 
     let db;
@@ -242,7 +248,7 @@ const DB_NAME = "onkyo-yaro";
     let lastInspectorTrackId = null;
     let systemHotkeys = { stopInstant: "", stopSoft: "", stopCustom: "" };
     let learningSystemHotkey = null;
-
+    let isHelpMode = false;
 
     init();
 
@@ -387,6 +393,90 @@ const DB_NAME = "onkyo-yaro";
         learningSystemHotkey = "stopCustom";
         status("次に押したキーを【任意フェード停止】のシステムホットキーに登録します");
       });
+
+      if (els.resetSystemHotkeys) {
+        els.resetSystemHotkeys.addEventListener("click", async () => {
+          systemHotkeys = { stopInstant: "", stopSoft: "", stopCustom: "" };
+          updateSystemHotkeysUI();
+          await saveState();
+          status("システムホットキーをリセットしました");
+        });
+      }
+
+      if (els.helpToggle) {
+        els.helpToggle.addEventListener("click", (e) => {
+          isHelpMode = !isHelpMode;
+          if (isHelpMode) {
+            els.helpToggle.classList.add("active");
+            els.helpToggle.textContent = "❔ ヘルプ表示: ON";
+            document.body.classList.add("help-mode-active");
+            status("ヘルプモード: 使い方を知りたいボタンや項目をクリックしてください");
+          } else {
+            els.helpToggle.classList.remove("active");
+            els.helpToggle.textContent = "❔ ヘルプ表示: OFF";
+            document.body.classList.remove("help-mode-active");
+            status("ヘルプモードを終了しました");
+          }
+        });
+      }
+
+      if (els.closeHelpModal) {
+        els.closeHelpModal.addEventListener("click", () => {
+          els.helpModal.classList.remove("active");
+        });
+      }
+
+      const preventInteractionInHelpMode = (e) => {
+        if (!isHelpMode) return;
+        const path = e.composedPath();
+        if (path.includes(els.helpToggle) || path.includes(els.helpModal)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      };
+
+      document.body.addEventListener("mousedown", preventInteractionInHelpMode, true);
+      document.body.addEventListener("touchstart", preventInteractionInHelpMode, { passive: false, capture: true });
+      document.body.addEventListener("pointerdown", preventInteractionInHelpMode, true);
+
+      document.body.addEventListener("click", (e) => {
+        if (!isHelpMode) return;
+        
+        const path = e.composedPath();
+        if (path.includes(els.helpToggle) || path.includes(els.helpModal)) {
+          return;
+        }
+        
+        let target = e.target;
+        let helpText = null;
+        
+        while (target && target !== document.body) {
+          if (target.dataset && target.dataset.help) {
+            helpText = target.dataset.help;
+            break;
+          }
+          target = target.parentElement;
+        }
+
+        if (helpText) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
+          let targetName = target.textContent.trim().split("\n")[0].substring(0, 20) || target.id || "項目";
+          // If the select itself is clicked, or an option, the name might be empty or too long.
+          if (target.tagName.toLowerCase() === "select") targetName = "プルダウンメニュー";
+          if (target.tagName.toLowerCase() === "input" && target.type === "range") targetName = "スライダー";
+          
+          els.helpTitle.textContent = `${targetName} のヘルプ`;
+          els.helpDescription.textContent = helpText;
+          els.helpModal.classList.add("active");
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+      }, true);
 
       // バックグラウンド・フォアグラウンド移行時の音声消失および誤再生防止処理
       document.addEventListener("visibilitychange", async () => {
@@ -835,23 +925,23 @@ const DB_NAME = "onkyo-yaro";
         row.draggable = !locked;
         row.dataset.id = track.id;
         row.innerHTML = `
-          <div class="drag-handle" title="ドラッグして並べ替え">⋮⋮</div>
-          <button type="button" title="再生" data-action="play">▶</button>
+          <div class="drag-handle" title="ドラッグして並べ替え" data-help="ここを掴んで上下にドラッグ＆ドロップすると、リストの順番を入れ替えることができます。">⋮⋮</div>
+          <button type="button" title="再生" data-action="play" data-help="この音声を再生します。">▶</button>
           <div class="track-main">
             <div class="track-name" style="border-left:4px solid ${track.color}; padding-left:8px;">${escapeHtml(track.name)}</div>
             <div class="track-meta">${escapeHtml(track.path)} ・ ${formatBytes(track.size)} ${track.hotkey ? "・Key " + escapeHtml(track.hotkey) : ""} ${track.midi ? "・MIDI " + escapeHtml(track.midi) : ""}</div>
             <div class="track-meta">${track.tags.map(tag => `<span class="pill">${escapeHtml(tag)}</span>`).join(" ")}</div>
           </div>
           <div class="track-actions">
-            <label class="toggle-switch" title="ループ" style="transform: scale(0.8); margin-right: 6px;">
+            <label class="toggle-switch" title="ループ" style="transform: scale(0.8); margin-right: 6px;" data-help="オンにすると、この音声が最後まで再生されたあと自動的に最初からループ再生されます。">
               <input type="checkbox" class="list-loop-toggle" ${track.loop ? "checked" : ""}>
               <span class="slider"></span>
             </label>
-            <button type="button" title="キューへ追加" data-action="queue">Q</button>
-            <button type="button" title="詳細編集" data-action="edit">⚙</button>
-            <button type="button" title="上へ" class="edit-control" data-action="up" ${index === 0 || locked ? "disabled" : ""}>↑</button>
-            <button type="button" title="下へ" class="edit-control" data-action="down" ${index === visible.length - 1 || locked ? "disabled" : ""}>↓</button>
-            <button type="button" title="削除" class="danger edit-control" data-action="remove" ${locked ? "disabled" : ""}>×</button>
+            <button type="button" title="キューへ追加" data-action="queue" data-help="この音声を「次に鳴らす音（キュー）」のリストに追加します。">Q</button>
+            <button type="button" title="詳細編集" data-action="edit" data-help="音量やパン、ホットキーなど、この音声の詳しい設定画面を開きます。">⚙</button>
+            <button type="button" title="上へ" class="edit-control" data-action="up" data-help="音声を一つ上の順番に移動させます。" ${index === 0 || locked ? "disabled" : ""}>↑</button>
+            <button type="button" title="下へ" class="edit-control" data-action="down" data-help="音声を一つ下の順番に移動させます。" ${index === visible.length - 1 || locked ? "disabled" : ""}>↓</button>
+            <button type="button" title="削除" class="danger edit-control" data-action="remove" data-help="この音声をリストから削除します。" ${locked ? "disabled" : ""}>×</button>
           </div>
         `;
         row.addEventListener("click", event => {
@@ -1115,9 +1205,9 @@ const DB_NAME = "onkyo-yaro";
         <div class="inspector-head">
           <div style="flex-grow: 1; margin-right: 12px;">
             <div class="label">Track Detail</div>
-            <input type="text" data-field="name" value="${escapeHtml(track.name)}" style="width: 100%; font-size: 16px; font-weight: bold; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: var(--text);">
+            <input type="text" data-field="name" value="${escapeHtml(track.name)}" style="width: 100%; font-size: 16px; font-weight: bold; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: var(--text);" data-help="リストに表示される音声の名前を変更できます。">
           </div>
-          <button type="button" id="drawWave">波形更新</button>
+          <button type="button" id="drawWave" data-help="波形がうまく表示されていない場合、これを押すと波形を再描画します。">波形更新</button>
         </div>
         <div class="wave-zoom-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span style="font-size:12px; color:var(--muted);">波形編集 (ドラッグで範囲指定)</span>
@@ -1132,50 +1222,61 @@ const DB_NAME = "onkyo-yaro";
           <canvas id="waveCanvasOverlay" width="900" height="180"></canvas>
         </div>
         <div class="preview-control-row" style="display:flex; gap:10px; margin-top:8px; margin-bottom:12px;">
-          <button type="button" id="btnPlayPreview" class="play" style="flex:1; padding: 8px; font-size:13px; background: rgba(32, 214, 199, 0.15); border-color: var(--accent-2); color: var(--accent-2);">
+          <button type="button" id="btnPlayPreview" class="play" style="flex:1; padding: 8px; font-size:13px; background: rgba(32, 214, 199, 0.15); border-color: var(--accent-2); color: var(--accent-2);" data-help="指定した再生範囲（赤い枠で囲んだ部分）だけを試し聴きします。本番には影響しません。">
             🔊 試聴 (設定範囲)
           </button>
-          <button type="button" id="btnStopPreview" class="danger" style="flex:1; padding: 8px; font-size:13px;">
+          <button type="button" id="btnStopPreview" class="danger" style="flex:1; padding: 8px; font-size:13px;" data-help="試し聴きを止めます。">
             🛑 試聴停止
           </button>
         </div>
         <div class="mini-grid">
-          <label>タグ
+          <label data-help="音声を分類するためのキーワード（タグ）を設定できます。「BGM」「効果音」などを入れておくと、あとで検索しやすくなります。">タグ
             <input data-field="tags" value="${escapeHtml(track.tags.join(", "))}" placeholder="BGM, 拍手, 緊急">
           </label>
-          <label>色
+          <label data-help="リスト表示時などに、この音声の目印となる色を変更できます。">色
             <input data-field="color" type="color" value="${escapeHtml(track.color)}">
           </label>
-          <label>音量
+          <label data-help="この音声の再生音量を調整します。">音量
             <input data-field="volume" type="range" min="0" max="1" step="0.01" value="${track.volume}">
           </label>
-          <label>パン
-            <input data-field="pan" type="range" min="-1" max="1" step="0.01" value="${track.pan}">
+          <label class="pan-label-container" data-help="音が左右どちらのスピーカーからどれくらい聴こえるか（パン）を調整します。">
+            <div class="pan-title-row">
+              <span>パン</span>
+              <span class="pan-value-display" id="panValueDisplay">${formatPan(track.pan)}</span>
+            </div>
+            <div class="pan-slider-wrapper">
+              <input data-field="pan" class="pan-slider" type="range" min="-1" max="1" step="0.01" value="${track.pan}">
+              <div class="pan-ticks">
+                <span class="pan-tick-l" title="左端 (L100)">L</span>
+                <span class="pan-tick-c" title="中央 (Center / ダブルクリックでリセット)">C</span>
+                <span class="pan-tick-r" title="右端 (R100)">R</span>
+              </div>
+            </div>
           </label>
-          <label>開始秒
+          <label data-help="音声の再生を開始する位置（秒数）を指定します。">開始秒
             <input data-field="start" type="number" min="0" step="0.1" value="${track.start}">
           </label>
-          <label>終了秒
+          <label data-help="音声の再生を終了する位置（秒数）を指定します。">終了秒
             <input data-field="end" type="number" min="0" step="0.1" value="${track.end}">
           </label>
-          <label>フェードイン秒
+          <label data-help="音声の再生開始時に、ここで指定した秒数をかけて徐々に音量を大きくします（フェードイン）。">フェードイン秒
             <input data-field="fadeIn" type="number" min="0" max="30" step="0.1" value="${track.fadeIn}">
           </label>
-          <label>曲別フェードアウト秒
+          <label data-help="「任意フェード停止」や自動曲接続の際に、この音声固有のフェードアウト秒数を設定します。0の場合は全体のマスター設定が使われます。">曲別フェードアウト秒
             <input data-field="fadeOut" type="number" min="0" max="30" step="0.1" value="${track.fadeOut}">
           </label>
-          <div class="toggle-label">
+          <div class="toggle-label" data-help="オンにすると、この音声が最後まで再生されたあと自動的に最初からループ再生されます。">
             <span style="color:var(--muted); font-size:12px;">ループ</span>
             <label class="toggle-switch">
               <input data-field="loop" type="checkbox" ${track.loop ? "checked" : ""}>
               <span class="slider"></span>
             </label>
           </div>
-          <label>ホットキー
+          <label data-help="この音声をキーボードの特定のキーで鳴らせるように手動で入力します。">ホットキー
             <input data-field="hotkey" value="${escapeHtml(track.hotkey)}" placeholder="例: F1 / KeyA / Digit1">
           </label>
         </div>
-        <div class="hotkey">
+        <div class="hotkey" data-help="キーボードやMIDIコントローラーのキーを実際に押して、この音声を鳴らすためのショートカットとして登録します。">
           <button type="button" id="learnHotkey">ホットキー学習</button>
           <button type="button" id="learnMidi">MIDI学習</button>
           <span class="status">現在: Key ${escapeHtml(track.hotkey || "-")} / MIDI ${escapeHtml(track.midi || "-")}</span>
@@ -1212,6 +1313,30 @@ const DB_NAME = "onkyo-yaro";
       
       els.inspector.querySelector("#btnPlayPreview").addEventListener("click", () => playPreview(track.id));
       els.inspector.querySelector("#btnStopPreview").addEventListener("click", () => stopPreview());
+
+      const panSlider = els.inspector.querySelector('.pan-slider');
+      const panDisplay = els.inspector.querySelector('#panValueDisplay');
+      if (panSlider && panDisplay) {
+        updatePanSliderBackground(panSlider);
+        panSlider.addEventListener('input', () => {
+          updatePanSliderBackground(panSlider);
+          panDisplay.textContent = formatPan(panSlider.value);
+        });
+        
+        const resetPan = async () => {
+          panSlider.value = 0;
+          updatePanSliderBackground(panSlider);
+          panDisplay.textContent = "C";
+          await updateTrackField(track.id, "pan", "0");
+        };
+
+        panSlider.addEventListener('dblclick', resetPan);
+        
+        const tickC = els.inspector.querySelector('.pan-tick-c');
+        if (tickC) {
+          tickC.addEventListener('click', resetPan);
+        }
+      }
 
       drawWaveform(track.id);
       setupWaveformInteraction(track.id);
@@ -1766,4 +1891,34 @@ const DB_NAME = "onkyo-yaro";
 
     function dateStamp() {
       return new Date().toISOString().slice(0, 19).replaceAll(":", "-");
+    }
+
+    function formatPan(value) {
+      const num = Number(value);
+      if (isNaN(num) || num === 0) return "C";
+      if (num < 0) {
+        return `L${Math.round(Math.abs(num) * 100)}`;
+      } else {
+        return `R${Math.round(num * 100)}`;
+      }
+    }
+
+    function updatePanSliderBackground(slider) {
+      if (!slider) return;
+      const val = parseFloat(slider.value);
+      const pct = (val + 1) / 2 * 100;
+      
+      let bg;
+      const trackColor = "#313642";
+      const activeColor = "var(--accent)";
+      
+      if (val === 0) {
+        bg = trackColor;
+      } else if (val < 0) {
+        bg = `linear-gradient(to right, ${trackColor} 0%, ${trackColor} ${pct}%, ${activeColor} ${pct}%, ${activeColor} 50%, ${trackColor} 50%, ${trackColor} 100%)`;
+      } else {
+        bg = `linear-gradient(to right, ${trackColor} 0%, ${trackColor} 50%, ${activeColor} 50%, ${activeColor} ${pct}%, ${trackColor} ${pct}%, ${trackColor} 100%)`;
+      }
+      
+      slider.style.background = bg;
     }

@@ -17,25 +17,36 @@
     <header>
       <div class="brand">
         <img src="onkyologo.png" alt="音響野郎" class="logo">
-        <span class="version-badge">v40</span>
+        <span class="version-badge">v42</span>
       </div>
       <div class="toolbar">
-        <label class="file-button">
-          <button type="button" id="pickFiles">音声を追加</button>
-          <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" multiple>
-        </label>
-        <label class="file-button">
-          <button type="button" id="pickFolder">フォルダ読込</button>
-          <input id="folderInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" webkitdirectory multiple>
-        </label>
-        <button id="exportList">リスト保存</button>
-        <button id="exportPackage">音声込み保存</button>
-        <label class="file-button">
-          <button type="button" id="importButton">リスト読込</button>
-          <input id="importInput" type="file" accept=".json,.zip,.sdpkg,application/json,application/zip">
-        </label>
-        <button id="safetyLock">本番ロック: OFF</button>
-        <button id="clearAll" class="danger">全消去</button>
+        <button id="helpToggle" data-help="このボタンを押すとヘルプモードになり、各機能の説明を見ることができます。もう一度押すと解除されます。">❔ ヘルプ表示: OFF</button>
+        <div class="dropdown" data-help="音声ファイルやフォルダを追加するためのメニューです。">
+          <button class="dropbtn">音声追加 ▼</button>
+          <div class="dropdown-content">
+            <label class="file-button">
+              <button type="button" id="pickFiles">音声ファイルを追加</button>
+              <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" multiple>
+            </label>
+            <label class="file-button">
+              <button type="button" id="pickFolder">フォルダ内の音声をすべて追加</button>
+              <input id="folderInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac" webkitdirectory multiple>
+            </label>
+          </div>
+        </div>
+        <div class="dropdown" data-help="現在のリストの保存や、別のリストの読み込みを行うメニューです。">
+          <button class="dropbtn">リスト保存・読込 ▼</button>
+          <div class="dropdown-content">
+            <button id="exportList">リスト情報のみを保存</button>
+            <button id="exportPackage">リスト情報と音声データをまとめて保存</button>
+            <label class="file-button">
+              <button type="button" id="importButton">別のリストを読み込む</button>
+              <input id="importInput" type="file" accept=".json,.zip,.sdpkg,application/json,application/zip">
+            </label>
+          </div>
+        </div>
+        <button id="safetyLock" data-help="本番ロックをONにすると、誤って音声を削除したり並べ替えたりするのを防ぎます。">本番ロック: OFF</button>
+        <button id="clearAll" class="danger" data-help="現在読み込まれているすべての音声とリスト情報を消去します。">全消去</button>
       </div>
     </header>
 
@@ -43,38 +54,38 @@
       <section class="deck" aria-label="再生デッキ">
         <div class="now">
           <div class="label">Now Playing</div>
-          <div id="nowTitle" class="track-title">音声を選択してください</div>
+          <div id="nowTitle" class="track-title" data-help="現在再生中の音声の名前が表示されます。">音声を選択してください</div>
           <div class="meters">
-            <div class="bar"><div id="progress" class="fill"></div></div>
+            <div class="bar"><div id="progress" class="fill" data-help="再生の進行状況を示します。クリックするとその位置にジャンプ（シーク）します。"></div></div>
             <div class="time-row">
               <span id="currentTime">00:00.0</span>
               <span id="duration">00:00.0</span>
             </div>
           </div>
           <div class="control-row">
-            <button id="playPause" class="play">再生</button>
-            <button id="stopInstant" class="stop-now">即座に停止</button>
-            <button id="stopOne" class="stop-soft">1秒フェード停止</button>
-            <button id="nextQueue">次を再生</button>
+            <button id="playPause" class="play" data-help="選択している音声を再生、または一時停止します。">再生</button>
+            <button id="stopInstant" class="stop-now" data-help="再生中のすべての音声を即座に停止します。">即座に停止</button>
+            <button id="stopOne" class="stop-soft" data-help="再生中のすべての音声を1秒かけてフェードアウトして停止します。">1秒フェード停止</button>
+            <button id="nextQueue" data-help="次に鳴らす音（キュー）を再生し、現在再生中の音をフェードアウトします。">次を再生</button>
           </div>
         </div>
 
         <div class="fader">
           <div class="label">Fade / Transition</div>
           <div class="fade-row">
-            <input id="fadeSlider" type="range" min="0.2" max="15" step="0.1" value="3">
-            <input id="fadeSeconds" type="number" min="0.2" max="60" step="0.1" value="3.0">
-            <button id="stopCustom" class="stop-soft">任意フェード停止</button>
+            <input id="fadeSlider" type="range" min="0.2" max="15" step="0.1" value="3" data-help="任意フェード停止や曲の自動フェード接続時に使われるフェード時間を設定します。">
+            <input id="fadeSeconds" type="number" min="0.2" max="60" step="0.1" value="3.0" data-help="任意フェード停止や曲の自動フェード接続時に使われるフェード時間を設定します。">
+            <button id="stopCustom" class="stop-soft" data-help="横の設定した秒数をかけてフェードアウトして停止します。">任意フェード停止</button>
           </div>
           <div class="mini-grid">
-            <label>切替モード
+            <label data-help="曲がフェード接続される際の動作モードを設定します。&#10;・即切替: 瞬時に次の曲へ切り替わります。&#10;・クロスフェード: 前の曲が消えゆくのと同時に次の曲が始まります。&#10;・フェード後に次を再生: 前の曲が完全に消えきってから次の曲が始まります。">切替モード
               <select id="transitionMode">
                 <option value="instant">即切替</option>
                 <option value="crossfade">クロスフェード</option>
                 <option value="fadeThenPlay">フェード後に次を再生</option>
               </select>
             </label>
-            <label>クロスフェード秒数
+            <label data-help="クロスフェードの長さを設定します。">クロスフェード秒数
               <input id="crossfadeSeconds" type="number" min="0" max="30" step="0.1" value="2.0">
             </label>
           </div>
@@ -83,22 +94,25 @@
         <div class="queue">
           <div class="label">Cue Queue</div>
           <div class="control-row">
-            <select id="queueMode">
+            <select id="queueMode" data-help="リストから曲を連続で再生する際の動作モードを選びます。&#10;・手動スタンバイ: 自動再生しません。&#10;・曲終わりで自動再生: 曲が終わったらすぐ次の曲を再生します。&#10;・曲終わりでフェード接続: クロスフェードしながら次の曲を再生します。">
               <option value="manual">手動スタンバイ</option>
               <option value="auto">曲終わりで自動再生</option>
               <option value="fade">曲終わりでフェード接続</option>
             </select>
-            <button id="clearQueue" class="edit-control">キュー消去</button>
+            <button id="clearQueue" class="edit-control" data-help="キュー（次に鳴らす音の順番）をすべて消去します。">キュー消去</button>
           </div>
           <div id="queueList" class="queue-list"></div>
         </div>
 
         <div class="fader">
-          <div class="label">System Hotkeys</div>
+          <div class="label" style="display: flex; justify-content: space-between; align-items: center;" data-help="システムホットキーは、どの音声を選択していてもキーボードのキー1つで停止機能などを呼び出せる便利なショートカット機能です。">
+            <span>System Hotkeys</span>
+            <button type="button" id="resetSystemHotkeys" style="font-size: 10px; padding: 2px 6px; background: transparent; border: 1px solid var(--line); color: var(--muted);" data-help="設定されているシステムホットキーをすべて消去して初期状態に戻します。">リセット</button>
+          </div>
           <div class="mini-grid" style="grid-template-columns: repeat(3, 1fr); gap: 6px;">
-            <button type="button" id="learnStopInstant" style="font-size: 11px; padding: 6px 4px;" title="即座に停止">即時停止キー</button>
-            <button type="button" id="learnStopSoft" style="font-size: 11px; padding: 6px 4px;" title="1秒フェード停止">1秒停止キー</button>
-            <button type="button" id="learnStopCustom" style="font-size: 11px; padding: 6px 4px;" title="任意フェード停止">任意フェードキー</button>
+            <button type="button" id="learnStopInstant" style="font-size: 11px; padding: 6px 4px;" title="即座に停止" data-help="「即時停止」を実行するキーボードのキーを登録します。押した後、好きなキーを押してください。">即時停止キー</button>
+            <button type="button" id="learnStopSoft" style="font-size: 11px; padding: 6px 4px;" title="1秒フェード停止" data-help="「1秒停止」を実行するキーボードのキーを登録します。">1秒停止キー</button>
+            <button type="button" id="learnStopCustom" style="font-size: 11px; padding: 6px 4px;" title="任意フェード停止" data-help="「任意停止」を実行するキーボードのキーを登録します。">任意フェードキー</button>
           </div>
           <div id="systemHotkeysStatus" class="status" style="font-size: 11px; margin-top: 4px; text-align: center;">即時: - / 1秒: - / 任意: -</div>
         </div>
@@ -124,12 +138,12 @@
 
       <section class="library" aria-label="音声リスト">
         <div class="tabs">
-          <button id="listTab" class="tab active">リスト</button>
-          <button id="padTab" class="tab">ポン出し</button>
-          <button id="editTab" class="tab">詳細編集</button>
+          <button id="listTab" class="tab active" data-help="追加した音声がリスト表示されます。リストはドラッグ＆ドロップで並べ替えられます。">リスト</button>
+          <button id="padTab" class="tab" data-help="音声をボタン（パッド）として並べて表示します。テレビ番組のポン出しのように、押した瞬間に音を鳴らせます。">ポン出し</button>
+          <button id="editTab" class="tab" data-help="選択した音声の詳細な設定（音量、パン、開始秒、ループなど）を調整する画面です。">詳細編集</button>
         </div>
         <div class="library-head">
-          <input id="search" class="search" type="search" placeholder="ファイル名 / タグ / ホットキーで検索">
+          <input id="search" class="search" type="search" placeholder="ファイル名 / タグ / ホットキーで検索" data-help="キーワードを入力すると、リストから一致する音声を絞り込んで表示します。">
           <span id="importStatus" class="status"></span>
         </div>
         <div class="view-container">
@@ -139,6 +153,18 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="helpModal" class="help-modal">
+    <div class="help-modal-content">
+      <div class="help-modal-header">
+        <h3 id="helpTitle">ヘルプ</h3>
+        <button id="closeHelpModal" class="close-help">&times;</button>
+      </div>
+      <div class="help-modal-body">
+        <p id="helpDescription"></p>
+      </div>
+    </div>
   </div>
 
   <script src="jszip.min.js"></script>

@@ -679,7 +679,6 @@
       -webkit-user-select: none; /* iOS Safari */
       user-select: none;         /* 標準 */
       -webkit-touch-callout: none; /* 長押しメニュー防止 */
-      touch-action: pan-y;       /* Y軸スクロールのみ（ドラッグ中はJSで防止） */
     }
 
     .drag-handle {
@@ -692,7 +691,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      touch-action: none; /* ハンドル上ではブラウザのスクロール動作を100%禁止 */
     }
     .drag-handle:active {
       cursor: grabbing;

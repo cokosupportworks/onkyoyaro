@@ -55,7 +55,12 @@ if ('serviceWorker' in navigator) {
           if (this._img) {
             this._lastTouch = touch;
             this._moveImage(touch);
+            
+            // 一時的に残像イメージを非表示にして、指の直下にある本物のターゲット要素を確実に特定する
+            this._img.style.display = 'none';
             var target = document.elementFromPoint(touch.clientX, touch.clientY);
+            this._img.style.display = '';
+            
             this._dispatchEvent(e, 'dragover', target);
             e.preventDefault();
           }
@@ -64,7 +69,11 @@ if ('serviceWorker' in navigator) {
       DragDropTouch.prototype._touchend = function (e) {
         if (this._shouldHandle(e)) {
           if (this._img) {
+            // 一時的に残像イメージを非表示にして、指の直下にあるドロップ先要素を確実に貫通して特定する
+            this._img.style.display = 'none';
             var target = document.elementFromPoint(this._lastTouch.clientX, this._lastTouch.clientY);
+            this._img.style.display = '';
+            
             this._dispatchEvent(e, 'drop', target);
             this._dispatchEvent(e, 'dragend', this._dragSource);
             this._reset();

@@ -35,28 +35,32 @@ if ('serviceWorker' in navigator) {
             this._dragSource = src;
             this._ptDown = e.touches[0];
             this._lastTouch = e.touches[0];
-            // ドラッグハンドル、またはその子要素がタッチされた場合
-            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
-              // ブラウザのスクロールやテキスト選択・メニュー表示などの不要なデフォルト処理を完全に抑止
-              e.preventDefault();
-              e.stopPropagation();
-            }
+            // ここでの preventDefault はタッチイベント自体を殺してしまうため行わない
           }
         }
       };
       DragDropTouch.prototype._touchmove = function (e) {
         if (this._shouldHandle(e) && this._dragSource) {
           var touch = e.touches[0];
+          var isDragHandle = e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle');
+          
           if (this._dragSource && !this._img) {
             var delta = this._getDelta(touch);
-            var threshold = e.target.classList.contains('drag-handle') ? 2 : 25;
+            // ドラッグハンドルの場合はより敏感に反応させる
+            var threshold = isDragHandle ? 2 : 25;
             if (delta > threshold) {
               this._dispatchEvent(e, 'dragstart', this._dragSource);
               this._createImage();
             }
           }
+          
           if (this._img) {
             this._lastTouch = touch;
+            
+            // ドラッグ中は画面スクロールを完全に防止する
+            e.preventDefault();
+            e.stopPropagation();
+            
             this._moveImage(touch);
             
             // 一時的に残像イメージを非表示にして、指の直下にある本物のターゲット要素を確実に特定する
@@ -65,7 +69,6 @@ if ('serviceWorker' in navigator) {
             this._img.style.display = '';
             
             this._dispatchEvent(e, 'dragover', target);
-            e.preventDefault();
           }
         }
       };

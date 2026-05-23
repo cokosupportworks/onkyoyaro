@@ -35,7 +35,11 @@ if ('serviceWorker' in navigator) {
             this._dragSource = src;
             this._ptDown = e.touches[0];
             this._lastTouch = e.touches[0];
-            // ここでの preventDefault はタッチイベント自体を殺してしまうため行わない
+            
+            // ドラッグハンドル部分のみ、タッチ開始時にブラウザデフォルト挙動を止める
+            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
+              e.preventDefault();
+            }
           }
         }
       };
@@ -46,7 +50,7 @@ if ('serviceWorker' in navigator) {
           
           if (this._dragSource && !this._img) {
             var delta = this._getDelta(touch);
-            // ドラッグハンドルの場合はより敏感に反応させる
+            // ドラッグハンドルの場合は少しの動きでも即座に反応
             var threshold = isDragHandle ? 2 : 25;
             if (delta > threshold) {
               this._dispatchEvent(e, 'dragstart', this._dragSource);
@@ -56,11 +60,7 @@ if ('serviceWorker' in navigator) {
           
           if (this._img) {
             this._lastTouch = touch;
-            
-            // ドラッグ中は画面スクロールを完全に防止する
-            e.preventDefault();
-            e.stopPropagation();
-            
+            e.preventDefault(); // ドラッグ中は全体スクロールを防止
             this._moveImage(touch);
             
             // 一時的に残像イメージを非表示にして、指の直下にある本物のターゲット要素を確実に特定する

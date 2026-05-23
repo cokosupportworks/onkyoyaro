@@ -474,7 +474,7 @@
 
     .track {
       display: grid;
-      grid-template-columns: 42px 1fr auto;
+      grid-template-columns: auto 42px 1fr auto;
       gap: 10px;
       align-items: center;
       padding: 10px 12px;
@@ -495,9 +495,13 @@
       opacity: .45;
     }
 
-    .track.active {
+    .track.selected {
       border-color: var(--accent);
-      background: linear-gradient(90deg, rgba(248, 201, 77, .14), #171a21 60%);
+    }
+
+    .track.playing {
+      background: linear-gradient(90deg, rgba(32, 214, 199, .15), #171a21 70%);
+      border-left: 5px solid var(--accent-2);
     }
 
     .track button {
@@ -580,7 +584,7 @@
       }
 
       .track {
-        grid-template-columns: 34px minmax(0, 1fr);
+        grid-template-columns: auto 34px minmax(0, 1fr);
       }
 
       .track-actions {
@@ -643,17 +647,72 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #0d0f13;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
     }
     .wave-container canvas {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
       height: 100%;
       pointer-events: none;
     }
     #waveCanvasOverlay {
       pointer-events: auto;
       cursor: crosshair;
+    }
+
+    /* Drag and Drop Custom Styles */
+    .drag-handle {
+      color: var(--muted);
+      cursor: grab;
+      font-size: 16px;
+      user-select: none;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    .track[draggable="true"] {
+      cursor: grab;
+    }
+    
+    .track.dragging {
+      opacity: .35;
+      border: 1px dashed var(--accent);
+    }
+    
+    .track.drag-over-above::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--accent);
+      z-index: 10;
+    }
+    .track.drag-over-below::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--accent);
+      z-index: 10;
+    }
+
+    /* System Hotkeys Styles */
+    #systemHotkeysStatus {
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      color: var(--accent-2);
+      background: rgba(32, 214, 199, 0.05);
+      border-radius: 4px;
+      padding: 4px;
     }

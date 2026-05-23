@@ -93,6 +93,16 @@
         </div>
 
         <div class="fader">
+          <div class="label">System Hotkeys</div>
+          <div class="mini-grid" style="grid-template-columns: repeat(3, 1fr); gap: 6px;">
+            <button type="button" id="learnStopInstant" style="font-size: 11px; padding: 6px 4px;" title="即座に停止">即時停止キー</button>
+            <button type="button" id="learnStopSoft" style="font-size: 11px; padding: 6px 4px;" title="1秒フェード停止">1秒停止キー</button>
+            <button type="button" id="learnStopCustom" style="font-size: 11px; padding: 6px 4px;" title="任意フェード停止">任意フェードキー</button>
+          </div>
+          <div id="systemHotkeysStatus" class="status" style="font-size: 11px; margin-top: 4px; text-align: center;">即時: - / 1秒: - / 任意: -</div>
+        </div>
+
+        <div class="fader">
           <div class="label">MIDI Device</div>
           <div class="control-row">
             <button id="enableMidi">MIDI有効化</button>

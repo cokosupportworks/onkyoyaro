@@ -2,6 +2,153 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
 }
 
+// DragDropTouch Polyfill for Touch Devices (iOS/iPadOS support)
+(function() {
+  var DragDropTouch = {};
+  (function() {
+    var DragDropTouch = (function () {
+      function DragDropTouch() {
+        this._lastClick = 0;
+        if (DragDropTouch._instance) {
+          throw new Error('DragDropTouch instance already created.');
+        }
+        var detectTouch = false;
+        try {
+          var opts = Object.defineProperty({}, 'passive', {
+            get: function () { detectTouch = true; }
+          });
+          window.addEventListener('test', null, opts);
+        } catch (e) {}
+        if ('ontouchstart' in document) {
+          var doc = document;
+          doc.addEventListener('touchstart', this._touchstart.bind(this), { passive: false });
+          doc.addEventListener('touchmove', this._touchmove.bind(this), { passive: false });
+          doc.addEventListener('touchend', this._touchend.bind(this));
+          doc.addEventListener('touchcancel', this._touchend.bind(this));
+        }
+      }
+      DragDropTouch.prototype._touchstart = function (e) {
+        if (this._shouldHandle(e)) {
+          this._reset();
+          var src = this._getTarget(e);
+          if (src) {
+            this._dragSource = src;
+            this._ptDown = e.touches[0];
+            this._lastTouch = e.touches[0];
+            if (e.target.classList.contains('drag-handle')) {
+              e.preventDefault();
+            }
+          }
+        }
+      };
+      DragDropTouch.prototype._touchmove = function (e) {
+        if (this._shouldHandle(e) && this._dragSource) {
+          var touch = e.touches[0];
+          if (this._dragSource && !this._img) {
+            var delta = this._getDelta(touch);
+            var threshold = e.target.classList.contains('drag-handle') ? 2 : 25;
+            if (delta > threshold) {
+              this._dispatchEvent(e, 'dragstart', this._dragSource);
+              this._createImage();
+            }
+          }
+          if (this._img) {
+            this._lastTouch = touch;
+            this._moveImage(touch);
+            var target = document.elementFromPoint(touch.clientX, touch.clientY);
+            this._dispatchEvent(e, 'dragover', target);
+            e.preventDefault();
+          }
+        }
+      };
+      DragDropTouch.prototype._touchend = function (e) {
+        if (this._shouldHandle(e)) {
+          if (this._img) {
+            var target = document.elementFromPoint(this._lastTouch.clientX, this._lastTouch.clientY);
+            this._dispatchEvent(e, 'drop', target);
+            this._dispatchEvent(e, 'dragend', this._dragSource);
+            this._reset();
+          }
+        }
+      };
+      DragDropTouch.prototype._shouldHandle = function (e) {
+        return e && !e.defaultPrevented && e.touches && e.touches.length > 0;
+      };
+      DragDropTouch.prototype._reset = function () {
+        this._destroyImage();
+        this._dragSource = null;
+        this._ptDown = null;
+        this._lastTouch = null;
+      };
+      DragDropTouch.prototype._getTarget = function (e) {
+        var el = e.target;
+        while (el && !el.hasAttribute('draggable')) {
+          el = el.parentElement;
+        }
+        return el;
+      };
+      DragDropTouch.prototype._getDelta = function (touch) {
+        var dx = touch.clientX - this._ptDown.clientX;
+        var dy = touch.clientY - this._ptDown.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+      DragDropTouch.prototype._dispatchEvent = function (e, type, target) {
+        if (e && target) {
+          var evt = document.createEvent('Event');
+          evt.initEvent(type, true, true);
+          evt.dataTransfer = {
+            effectAllowed: 'all',
+            dropEffect: 'move',
+            setData: function() {},
+            getData: function() {},
+            clearData: function() {},
+            types: []
+          };
+          var touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
+          if (touch) {
+            evt.clientX = touch.clientX;
+            evt.clientY = touch.clientY;
+            evt.screenX = touch.screenX;
+            evt.screenY = touch.screenY;
+            evt.pageX = touch.pageX;
+            evt.pageY = touch.pageY;
+          }
+          target.dispatchEvent(evt);
+        }
+      };
+      DragDropTouch.prototype._createImage = function () {
+        if (this._dragSource && !this._img) {
+          var img = this._dragSource.cloneNode(true);
+          img.style.position = 'fixed';
+          img.style.pointerEvents = 'none';
+          img.style.opacity = '0.5';
+          img.style.zIndex = '99999';
+          document.body.appendChild(img);
+          this._img = img;
+          this._moveImage(this._ptDown);
+        }
+      };
+      DragDropTouch.prototype._destroyImage = function () {
+        if (this._img) {
+          this._img.parentElement.removeChild(this._img);
+          this._img = null;
+        }
+      };
+      DragDropTouch.prototype._moveImage = function (touch) {
+        if (this._img && touch) {
+          var rect = this._dragSource.getBoundingClientRect();
+          this._img.style.left = (touch.clientX - (touch.clientX - rect.left)) + 'px';
+          this._img.style.top = (touch.clientY - (touch.clientY - rect.top)) + 'px';
+          this._img.style.width = rect.width + 'px';
+          this._img.style.height = rect.height + 'px';
+        }
+      };
+      DragDropTouch._instance = new DragDropTouch();
+      return DragDropTouch;
+    }());
+  })();
+})();
+
 const DB_NAME = "onkyo-yaro";
     const DB_VERSION = 2;
     const STORE = "audio";
@@ -48,7 +195,11 @@ const DB_NAME = "onkyo-yaro";
       saveStatus: document.getElementById("saveStatus"),
       importStatus: document.getElementById("importStatus"),
       search: document.getElementById("search"),
-      storageStatus: document.getElementById("storageStatus")
+      storageStatus: document.getElementById("storageStatus"),
+      learnStopInstant: document.getElementById("learnStopInstant"),
+      learnStopSoft: document.getElementById("learnStopSoft"),
+      learnStopCustom: document.getElementById("learnStopCustom"),
+      systemHotkeysStatus: document.getElementById("systemHotkeysStatus")
     };
 
     let db;
@@ -63,7 +214,8 @@ const DB_NAME = "onkyo-yaro";
     let audioBufferCache = new Map();
     let audioNodes = {
       active: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 },
-      standby: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 }
+      standby: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 },
+      preview: { source: null, gain: null, panner: null, trackId: null, startedAt: 0, offset: 0, paused: true, duration: 0 }
     };
     let updateAnimationId = null;
     let draggedId = null;
@@ -71,6 +223,10 @@ const DB_NAME = "onkyo-yaro";
     let learningMidiId = null;
     let autoFadingId = null;
     let midiAccess = null;
+    let waveformZoom = 1;
+    let lastInspectorTrackId = null;
+    let systemHotkeys = { stopInstant: "", stopSoft: "", stopCustom: "" };
+    let learningSystemHotkey = null;
 
 
     init();
@@ -204,6 +360,53 @@ const DB_NAME = "onkyo-yaro";
         if (audioContext.state === "suspended") audioContext.resume();
       }, { once: true });
       document.addEventListener("keydown", handleHotkey);
+      els.learnStopInstant.addEventListener("click", () => {
+        learningSystemHotkey = "stopInstant";
+        status("次に押したキーを【即座に停止】のシステムホットキーに登録します");
+      });
+      els.learnStopSoft.addEventListener("click", () => {
+        learningSystemHotkey = "stopSoft";
+        status("次に押したキーを【1秒フェード停止】のシステムホットキーに登録します");
+      });
+      els.learnStopCustom.addEventListener("click", () => {
+        learningSystemHotkey = "stopCustom";
+        status("次に押したキーを【任意フェード停止】のシステムホットキーに登録します");
+      });
+
+      // バックグラウンド・フォアグラウンド移行時の音声消失および誤再生防止処理
+      document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState === "hidden") {
+          // バックグラウンドに入った瞬間：音声を完全停止して一時停止状態（Pause）にする
+          if (currentId && !audioNodes.active.paused && audioContext) {
+            audioNodes.active.offset = audioContext.currentTime - audioNodes.active.startedAt;
+            stopDeck(audioNodes.active);
+            audioNodes.active.paused = true;
+            updateDeck();
+            await saveState();
+          }
+          stopPreview();
+        } else if (document.visibilityState === "visible") {
+          // iOS SafariやデスクトップブラウザのAutoplayロックを回避するためのワンタイム安全ガード
+          // 復帰後の最初のタップ操作（click / touchstart）でのみ確実にアンミュート（再接続）させる。
+          // 自動的な.resume()の呼び出しはAutoplay制限の永久ミュート化を引き起こすため、完全に排除します。
+          const resumeOnInteraction = async () => {
+            if (audioContext) {
+              try {
+                if (audioContext.state === "suspended") {
+                  await audioContext.resume();
+                  console.log("AudioContext successfully resumed on user interaction after foreground restore");
+                }
+              } catch (err) {
+                console.warn("AudioContext resume on user interaction failed", err);
+              }
+            }
+            document.removeEventListener("click", resumeOnInteraction);
+            document.removeEventListener("touchstart", resumeOnInteraction);
+          };
+          document.addEventListener("click", resumeOnInteraction);
+          document.addEventListener("touchstart", resumeOnInteraction);
+        }
+      });
     }
 
     async function addFiles(fileList) {
@@ -334,6 +537,94 @@ const DB_NAME = "onkyo-yaro";
       deck.paused = true;
     }
 
+    let previewTimeoutId = null;
+
+    async function playPreview(id) {
+      const track = tracks.find(item => item.id === id);
+      if (!track) return;
+      
+      const blob = await dbGet(STORE, id);
+      if (!blob) return status("保存済み音声が見つかりません");
+
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") await audioContext.resume();
+      
+      stopPreview();
+
+      const buffer = await getAudioBuffer(id, blob);
+      
+      const source = audioContext.createBufferSource();
+      const gain = audioContext.createGain();
+      const panner = audioContext.createStereoPanner();
+      
+      source.buffer = buffer;
+      source.loop = false; 
+      
+      const targetVolume = clamp(Number(track.volume), 0, 1);
+      gain.gain.value = targetVolume;
+      panner.pan.value = clamp(Number(track.pan), -1, 1);
+      
+      source.connect(gain);
+      gain.connect(panner);
+      panner.connect(audioContext.destination);
+
+      audioNodes.preview.source = source;
+      audioNodes.preview.gain = gain;
+      audioNodes.preview.panner = panner;
+      audioNodes.preview.trackId = id;
+      audioNodes.preview.duration = buffer.duration;
+      audioNodes.preview.paused = false;
+      audioNodes.preview.offset = Math.max(0, track.start || 0);
+
+      source.start(0, audioNodes.preview.offset);
+      audioNodes.preview.startedAt = audioContext.currentTime - audioNodes.preview.offset;
+
+      const endT = track.end > 0 ? track.end : buffer.duration;
+      const playDuration = endT - audioNodes.preview.offset;
+      
+      if (playDuration > 0) {
+        previewTimeoutId = setTimeout(() => {
+          if (audioNodes.preview.source === source) {
+            stopPreview();
+          }
+        }, playDuration * 1000);
+      }
+
+      source.onended = () => {
+        if (previewTimeoutId) clearTimeout(previewTimeoutId);
+        if (source === audioNodes.preview.source) {
+          audioNodes.preview.source = null;
+          audioNodes.preview.gain = null;
+          audioNodes.preview.panner = null;
+          audioNodes.preview.paused = true;
+          status("試聴が終了しました");
+        }
+      };
+
+      status(`試聴を開始しました: ${track.name}`);
+    }
+
+    function stopPreview() {
+      if (previewTimeoutId) {
+        clearTimeout(previewTimeoutId);
+        previewTimeoutId = null;
+      }
+      if (audioNodes.preview.source) {
+        audioNodes.preview.source.onended = null;
+        try {
+          audioNodes.preview.source.stop();
+        } catch (e) {}
+        try { audioNodes.preview.source.disconnect(); } catch (e) {}
+        try { audioNodes.preview.gain.disconnect(); } catch (e) {}
+        try { audioNodes.preview.panner.disconnect(); } catch (e) {}
+        audioNodes.preview.source = null;
+      }
+      audioNodes.preview.gain = null;
+      audioNodes.preview.panner = null;
+      audioNodes.preview.paused = true;
+      status("試聴を停止しました");
+    }
+
     async function playTrack(id, options = {}) {
       const track = tracks.find(item => item.id === id);
       if (!track) return;
@@ -447,6 +738,11 @@ const DB_NAME = "onkyo-yaro";
       if (audioNodes.active.paused) {
         const track = tracks.find(item => item.id === currentId);
         if (!track) return;
+        
+        if (audioNodes.active.offset === 0) {
+          audioNodes.active.offset = Math.max(0, track.start || 0);
+        }
+
         const blob = await dbGet(STORE, currentId);
         const buffer = await getAudioBuffer(currentId, blob);
         const targetVolume = clamp(Number(track.volume), 0, 1);
@@ -492,8 +788,11 @@ const DB_NAME = "onkyo-yaro";
     function clearFade() {}
 
     function render() {
-      const query = els.search.value.trim().toLowerCase();
-      const visible = tracks.filter(track => `${track.name} ${track.path} ${track.tags.join(" ")} ${track.hotkey} ${track.midi}`.toLowerCase().includes(query));
+      const query = els.search.value.trim().toLowerCase().normalize("NFC");
+      const visible = tracks.filter(track => {
+        const text = `${track.name} ${track.path} ${track.tags.join(" ")} ${track.hotkey} ${track.midi}`.toLowerCase().normalize("NFC");
+        return text.includes(query);
+      });
       els.trackCount.textContent = `${tracks.length} tracks`;
       els.trackList.innerHTML = "";
       els.padGrid.innerHTML = "";
@@ -517,10 +816,11 @@ const DB_NAME = "onkyo-yaro";
       visible.forEach(track => {
         const index = tracks.findIndex(item => item.id === track.id);
         const row = document.createElement("div");
-        row.className = `track ${track.id === currentId ? "active" : ""}`;
+        row.className = `track ${track.id === selectedId ? "selected" : ""} ${track.id === currentId ? "playing" : ""}`;
         row.draggable = !locked;
         row.dataset.id = track.id;
         row.innerHTML = `
+          <div class="drag-handle" title="ドラッグして並べ替え">⋮⋮</div>
           <button type="button" title="再生" data-action="play">▶</button>
           <div class="track-main">
             <div class="track-name" style="border-left:4px solid ${track.color}; padding-left:8px;">${escapeHtml(track.name)}</div>
@@ -539,6 +839,12 @@ const DB_NAME = "onkyo-yaro";
             <button type="button" title="削除" class="danger edit-control" data-action="remove" ${locked ? "disabled" : ""}>×</button>
           </div>
         `;
+        row.addEventListener("click", event => {
+          if (event.target.closest("button, input, select, .drag-handle")) return;
+          selectedId = track.id;
+          renderInspector();
+          render();
+        });
         row.addEventListener("click", event => handleTrackAction(event, track.id));
         const toggle = row.querySelector(".list-loop-toggle");
         if (toggle) {
@@ -547,19 +853,64 @@ const DB_NAME = "onkyo-yaro";
             if (selectedId === track.id) renderInspector();
           });
         }
-        row.addEventListener("dragstart", () => {
+        
+        let dragOverPosition = null;
+
+        row.addEventListener("dragstart", (e) => {
+          if (locked) {
+            e.preventDefault();
+            return;
+          }
           draggedId = track.id;
           row.classList.add("dragging");
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+          }
         });
         row.addEventListener("dragend", () => {
           draggedId = null;
           row.classList.remove("dragging");
+          document.querySelectorAll(".track").forEach(el => {
+            el.classList.remove("drag-over-above", "drag-over-below");
+          });
         });
-        row.addEventListener("dragover", event => event.preventDefault());
+        row.addEventListener("dragover", event => {
+          if (locked || !draggedId || draggedId === track.id) return;
+          event.preventDefault();
+          if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "move";
+          }
+
+          const rect = row.getBoundingClientRect();
+          const relativeY = event.clientY - rect.top;
+          const isAbove = relativeY < rect.height / 2;
+
+          row.classList.remove("drag-over-above", "drag-over-below");
+          if (isAbove) {
+            row.classList.add("drag-over-above");
+            dragOverPosition = "above";
+          } else {
+            row.classList.add("drag-over-below");
+            dragOverPosition = "below";
+          }
+        });
+        row.addEventListener("dragleave", () => {
+          row.classList.remove("drag-over-above", "drag-over-below");
+        });
         row.addEventListener("drop", async event => {
           event.preventDefault();
+          row.classList.remove("drag-over-above", "drag-over-below");
           if (!draggedId || draggedId === track.id) return;
-          moveTrackBefore(draggedId, track.id);
+          
+          const sourceIndex = tracks.findIndex(t => t.id === draggedId);
+          let targetIndex = tracks.findIndex(t => t.id === track.id);
+          if (sourceIndex < 0 || targetIndex < 0) return;
+
+          const [movedTrack] = tracks.splice(sourceIndex, 1);
+          targetIndex = tracks.findIndex(t => t.id === track.id);
+          const insertIndex = dragOverPosition === "above" ? targetIndex : targetIndex + 1;
+          
+          tracks.splice(insertIndex, 0, movedTrack);
           await saveState();
           render();
         });
@@ -681,6 +1032,9 @@ const DB_NAME = "onkyo-yaro";
         tab.classList.toggle("active", view === name);
         panel.classList.toggle("active", view === name);
       });
+      if (view !== "edit") {
+        stopPreview();
+      }
       saveState();
       if (view === "edit") renderInspector();
     }
@@ -736,18 +1090,39 @@ const DB_NAME = "onkyo-yaro";
         els.inspector.innerHTML = '<div class="empty">編集する音声を選択してください。</div>';
         return;
       }
+      if (lastInspectorTrackId !== track.id) {
+        waveformZoom = 1;
+        lastInspectorTrackId = track.id;
+        stopPreview();
+      }
       selectedId = track.id;
       els.inspector.innerHTML = `
         <div class="inspector-head">
-          <div>
+          <div style="flex-grow: 1; margin-right: 12px;">
             <div class="label">Track Detail</div>
-            <strong>${escapeHtml(track.name)}</strong>
+            <input type="text" data-field="name" value="${escapeHtml(track.name)}" style="width: 100%; font-size: 16px; font-weight: bold; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: var(--text);">
           </div>
           <button type="button" id="drawWave">波形更新</button>
+        </div>
+        <div class="wave-zoom-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; color:var(--muted);">波形編集 (ドラッグで範囲指定)</span>
+          <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px;">
+            ズーム: 
+            <input type="range" id="waveformZoom" min="1" max="15" step="0.5" value="${waveformZoom}" style="width:100px; padding:0; height:auto;">
+            <span id="zoomVal" style="width:28px; text-align:right;">${waveformZoom}x</span>
+          </label>
         </div>
         <div class="wave-container">
           <canvas id="waveCanvas" width="900" height="180"></canvas>
           <canvas id="waveCanvasOverlay" width="900" height="180"></canvas>
+        </div>
+        <div class="preview-control-row" style="display:flex; gap:10px; margin-top:8px; margin-bottom:12px;">
+          <button type="button" id="btnPlayPreview" class="play" style="flex:1; padding: 8px; font-size:13px; background: rgba(32, 214, 199, 0.15); border-color: var(--accent-2); color: var(--accent-2);">
+            🔊 試聴 (設定範囲)
+          </button>
+          <button type="button" id="btnStopPreview" class="danger" style="flex:1; padding: 8px; font-size:13px;">
+            🛑 試聴停止
+          </button>
         </div>
         <div class="mini-grid">
           <label>タグ
@@ -793,7 +1168,7 @@ const DB_NAME = "onkyo-yaro";
       `;
 
       els.inspector.querySelectorAll("[data-field]").forEach(input => {
-        const eventName = ["tags", "hotkey", "loop"].includes(input.dataset.field) ? "change" : "input";
+        const eventName = ["name", "tags", "hotkey", "loop"].includes(input.dataset.field) ? "change" : "input";
         input.addEventListener(eventName, async () => {
           const val = input.type === "checkbox" ? input.checked.toString() : input.value;
           await updateTrackField(track.id, input.dataset.field, val);
@@ -809,6 +1184,20 @@ const DB_NAME = "onkyo-yaro";
         status("次に受けたMIDIノート/CCをこの音声に登録します");
       });
       els.inspector.querySelector("#drawWave").addEventListener("click", () => drawWaveform(track.id));
+      
+      const zoomInput = els.inspector.querySelector("#waveformZoom");
+      if (zoomInput) {
+        zoomInput.addEventListener("input", (e) => {
+          waveformZoom = parseFloat(e.target.value);
+          const zoomVal = els.inspector.querySelector("#zoomVal");
+          if (zoomVal) zoomVal.textContent = `${waveformZoom}x`;
+          drawWaveform(track.id);
+        });
+      }
+      
+      els.inspector.querySelector("#btnPlayPreview").addEventListener("click", () => playPreview(track.id));
+      els.inspector.querySelector("#btnStopPreview").addEventListener("click", () => stopPreview());
+
       drawWaveform(track.id);
       setupWaveformInteraction(track.id);
     }
@@ -881,15 +1270,26 @@ const DB_NAME = "onkyo-yaro";
           audioNodes.active.source.loop = track.loop;
         }
         applyPan(track.pan);
+        if (field === "name") {
+          updateDeck();
+        }
       }
       await saveState();
-      if (["tags", "color", "hotkey", "midi"].includes(field)) render();
+      if (["name", "tags", "color", "hotkey", "midi"].includes(field)) render();
     }
 
     async function drawWaveform(id) {
       const canvas = document.getElementById("waveCanvas");
       const overlay = document.getElementById("waveCanvasOverlay");
       if (!canvas || !overlay) return;
+      
+      const zoom = waveformZoom || 1;
+      const targetWidth = 900 * zoom;
+      canvas.width = targetWidth;
+      canvas.style.width = `${targetWidth}px`;
+      overlay.width = targetWidth;
+      overlay.style.width = `${targetWidth}px`;
+      
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#0d0f13";
@@ -954,6 +1354,7 @@ const DB_NAME = "onkyo-yaro";
         transitionMode: els.transitionMode.value,
         crossfadeSeconds: Number(els.crossfadeSeconds.value) || 2,
         queueMode: els.queueMode.value,
+        systemHotkeys,
         savedAt: new Date().toISOString()
       };
       if (db) {
@@ -979,6 +1380,14 @@ const DB_NAME = "onkyo-yaro";
         els.transitionMode.value = state.transitionMode || "instant";
         els.crossfadeSeconds.value = Number(state.crossfadeSeconds || 2).toFixed(1);
         els.queueMode.value = state.queueMode || "manual";
+        if (state.systemHotkeys) {
+          systemHotkeys = {
+            stopInstant: state.systemHotkeys.stopInstant || "",
+            stopSoft: state.systemHotkeys.stopSoft || "",
+            stopCustom: state.systemHotkeys.stopCustom || ""
+          };
+        }
+        updateSystemHotkeysUI();
         document.body.classList.toggle("locked", locked);
         els.safetyLock.textContent = `本番ロック: ${locked ? "ON" : "OFF"}`;
         requestAnimationFrame(() => switchView(currentView));
@@ -986,6 +1395,14 @@ const DB_NAME = "onkyo-yaro";
         console.warn("Restore state failed", err);
         tracks = [];
       }
+    }
+
+    function updateSystemHotkeysUI() {
+      if (!els.systemHotkeysStatus) return;
+      const instant = systemHotkeys.stopInstant || "-";
+      const soft = systemHotkeys.stopSoft || "-";
+      const custom = systemHotkeys.stopCustom || "-";
+      els.systemHotkeysStatus.textContent = `即時: ${instant} / 1秒: ${soft} / 任意: ${custom}`;
     }
 
     function exportListOnly() {
@@ -1184,7 +1601,35 @@ const DB_NAME = "onkyo-yaro";
         }
         return;
       }
+      if (learningSystemHotkey) {
+        event.preventDefault();
+        systemHotkeys[learningSystemHotkey] = event.code;
+        learningSystemHotkey = null;
+        saveState();
+        updateSystemHotkeysUI();
+        status(`システムホットキー ${event.code} を登録しました`);
+        return;
+      }
+      
       if (editable || event.repeat) return;
+
+      // システムホットキー（停止）の判定
+      if (systemHotkeys.stopInstant && event.code === systemHotkeys.stopInstant) {
+        event.preventDefault();
+        stopAudio(0);
+        return;
+      }
+      if (systemHotkeys.stopSoft && event.code === systemHotkeys.stopSoft) {
+        event.preventDefault();
+        stopAudio(1);
+        return;
+      }
+      if (systemHotkeys.stopCustom && event.code === systemHotkeys.stopCustom) {
+        event.preventDefault();
+        stopAudio(Number(els.fadeSeconds.value));
+        return;
+      }
+
       const track = tracks.find(item => item.hotkey === event.code);
       if (track) {
         event.preventDefault();

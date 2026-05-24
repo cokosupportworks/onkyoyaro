@@ -30,14 +30,17 @@ if ('serviceWorker' in navigator) {
       DragDropTouch.prototype._touchstart = function (e) {
         if (this._shouldHandle(e)) {
           this._reset();
+          // ハンドルをつかんだ時だけ row.draggable=true になる。
           var src = this._getTarget(e);
           if (src) {
+            var isDragHandle = e.target.classList.contains('drag-handle') || (e.target.closest && !!e.target.closest('.drag-handle'));
+            if (!isDragHandle) return;
             this._dragSource = src;
             this._ptDown = e.touches[0];
             this._lastTouch = e.touches[0];
             
             // ドラッグハンドル部分のみ、タッチ開始時にブラウザデフォルト挙動を止める
-            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
+            if (isDragHandle) {
               e.preventDefault();
             }
           }
@@ -430,23 +433,11 @@ const DB_NAME = "onkyo-yaro";
         if (!isHelpMode) return;
         const path = e.composedPath();
         if (path.includes(els.helpToggle) || path.includes(els.helpModal)) return;
+        
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-      };
 
-      document.body.addEventListener("mousedown", preventInteractionInHelpMode, true);
-      document.body.addEventListener("touchstart", preventInteractionInHelpMode, { passive: false, capture: true });
-      document.body.addEventListener("pointerdown", preventInteractionInHelpMode, true);
-
-      document.body.addEventListener("click", (e) => {
-        if (!isHelpMode) return;
-        
-        const path = e.composedPath();
-        if (path.includes(els.helpToggle) || path.includes(els.helpModal)) {
-          return;
-        }
-        
         let target = e.target;
         let helpText = null;
         
@@ -459,23 +450,26 @@ const DB_NAME = "onkyo-yaro";
         }
 
         if (helpText) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          
           let targetName = target.textContent.trim().split("\n")[0].substring(0, 20) || target.id || "項目";
-          // If the select itself is clicked, or an option, the name might be empty or too long.
-          if (target.tagName.toLowerCase() === "select") targetName = "プルダウンメニュー";
-          if (target.tagName.toLowerCase() === "input" && target.type === "range") targetName = "スライダー";
+          if (target.tagName && target.tagName.toLowerCase() === "select") targetName = "プルダウンメニュー";
+          if (target.tagName && target.tagName.toLowerCase() === "input" && target.type === "range") targetName = "スライダー";
           
           els.helpTitle.textContent = `${targetName} のヘルプ`;
           els.helpDescription.textContent = helpText;
           els.helpModal.classList.add("active");
-        } else {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
         }
+      };
+
+      document.body.addEventListener("mousedown", preventInteractionInHelpMode, true);
+      document.body.addEventListener("touchstart", preventInteractionInHelpMode, { passive: false, capture: true });
+
+      document.body.addEventListener("click", (e) => {
+        if (!isHelpMode) return;
+        const path = e.composedPath();
+        if (path.includes(els.helpToggle) || path.includes(els.helpModal)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
       }, true);
 
       // バックグラウンド・フォアグラウンド移行時の音声消失および誤再生防止処理
@@ -922,7 +916,7 @@ const DB_NAME = "onkyo-yaro";
         const index = tracks.findIndex(item => item.id === track.id);
         const row = document.createElement("div");
         row.className = `track ${track.id === selectedId ? "selected" : ""} ${track.id === currentId ? "playing" : ""}`;
-        row.draggable = !locked;
+        row.draggable = false; // ハンドル操作時のみtrueにする
         row.dataset.id = track.id;
         row.innerHTML = `
           <div class="drag-handle" title="ドラッグして並べ替え" data-help="ここを掴んで上下にドラッグ＆ドロップすると、リストの順番を入れ替えることができます。">⋮⋮</div>
@@ -957,6 +951,17 @@ const DB_NAME = "onkyo-yaro";
             await updateTrackField(track.id, "loop", e.target.checked.toString());
             if (selectedId === track.id) renderInspector();
           });
+        }
+        
+        const handle = row.querySelector(".drag-handle");
+        if (handle) {
+          const enableDrag = () => { if (!locked) row.draggable = true; };
+          const disableDrag = () => { row.draggable = false; };
+          handle.addEventListener("mousedown", enableDrag);
+          handle.addEventListener("touchstart", enableDrag, { passive: true });
+          row.addEventListener("dragend", disableDrag);
+          window.addEventListener("mouseup", disableDrag, { once: true });
+          window.addEventListener("touchend", disableDrag, { once: true });
         }
         
         let dragOverPosition = null;

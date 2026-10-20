@@ -1558,12 +1558,23 @@ const DB_NAME = "onkyo-yaro";
       });
     }
 
-    function dbDelete(key) {
+    function dbDeleteMany(ids) {
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE, "readwrite");
-        tx.objectStore(STORE).delete(key);
+        if (!db) return reject(new Error("音源データベースに接続されていません"));
+        // Delete the entire requested set atomically, including local folder links.
+        const tx = db.transaction([STORE, "state"], "readwrite");
         tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = () => reject(tx.error || new Error("音源の削除に失敗しました"));
+        tx.onabort = () => reject(tx.error || new Error("音源の削除が中断されました"));
+        try {
+          for (const id of ids) {
+            tx.objectStore(STORE).delete(id);
+            tx.objectStore("state").delete(`source-folder:${id}`);
+          }
+        } catch (error) {
+          tx.abort();
+          reject(error);
+        }
       });
     }
 
@@ -2328,56 +2339,64 @@ const DB_NAME = "onkyo-yaro";
       tracks.splice(adjustedTarget, 0, track);
     }
 
+    let deletionInProgress = false;
+
+    async function deleteTracks(ids) {
+      if (deletionInProgress) return status("削除処理中です。完了までお待ちください");
+      deletionInProgress = true;
+      const removed = new Set(ids);
+      status("音源データを削除中...");
+      try {
+        try {
+          // Keep the list intact until the deletion transaction commits.
+          await dbDeleteMany(ids);
+        } catch (error) {
+          console.error("Audio deletion failed", error);
+          status("音源データを削除できませんでした。リストは変更していません。再度お試しください");
+          return;
+        }
+
+        if (removed.has(currentId)) {
+          hardStop();
+          currentId = null;
+        }
+        if (removed.has(audioNodes.preview.trackId)) stopPreview();
+        tracks = tracks.filter(track => !removed.has(track.id));
+        queue = queue.filter(id => !removed.has(id));
+        if (removed.has(selectedId)) selectedId = tracks[0]?.id || null;
+        for (const id of ids) {
+          audioBufferCache.delete(id);
+          sourceFolderHandles.delete(id);
+          sourceFolderLoads.delete(id);
+        }
+        render();
+        updateDeck();
+        try {
+          await saveState();
+        } catch (error) {
+          console.error("List save after deletion failed", error);
+          status("音源データは削除しましたが、リストの保存に失敗しました");
+          return;
+        }
+        await updateStorageQuota();
+        status(`${ids.length}件の音源をリストとブラウザ内の保存領域から削除しました`);
+      } finally {
+        deletionInProgress = false;
+      }
+    }
+
     async function removeTrack(id) {
       if (locked) return status("本番ロック中です");
-      if (id === currentId) {
-        hardStop();
-        currentId = null;
-      }
-      
-      // 即座にUIから消す
-      tracks = tracks.filter(track => track.id !== id);
-      render();
-      
-      // バックグラウンドで削除処理
-      try {
-        await dbDelete(id);
-        await saveState();
-        updateDeck();
-        await updateStorageQuota();
-        status("リストから削除しました");
-      } catch (err) {
-        console.error("Delete failed", err);
-        status("削除中にエラーが発生しました");
-      }
+      if (!tracks.some(track => track.id === id)) return;
+      await deleteTracks([id]);
     }
 
     async function clearLibrary() {
       if (!tracks.length) return;
       if (locked) return status("本番ロック中です");
+      if (deletionInProgress) return status("削除処理中です。完了までお待ちください");
       if (!confirm("リストとブラウザ内に保存した音声をすべて消去しますか？")) return;
-      
-      hardStop();
-      const tracksToClear = [...tracks];
-      
-      // 即座にUIをクリア
-      tracks = [];
-      currentId = null;
-      render();
-      
-      status("消去中...");
-      
-      try {
-        // 並列で削除を実行して高速化
-        await Promise.all(tracksToClear.map(t => dbDelete(t.id)));
-        await saveState();
-        updateDeck();
-        await updateStorageQuota();
-        status("全消去しました");
-      } catch (err) {
-        console.error("Clear all failed", err);
-        status("消去中にエラーが発生しました");
-      }
+      await deleteTracks(tracks.map(track => track.id));
     }
 
     function switchView(view) {
